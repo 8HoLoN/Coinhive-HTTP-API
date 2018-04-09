@@ -1,0 +1,602 @@
+swagger: "2.0"
+info:
+  description: "Coinhive HTTP API"
+  version: "1.0.0"
+  title: "Coinhive HTTP API"
+  termsOfService: "https://coinhive.com/info/terms-of-service/"
+  contact:
+    url: "https://coinhive.com/contact"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "api.coinhive.com"
+basePath: "/"
+tags:
+- name: "token"
+  description: "Operations about token resource"
+  externalDocs:
+    description: "Find out more"
+    url: "https://coinhive.com/documentation/http-api#token-verify"
+- name: "user"
+  description: "Operations about user resource"
+  externalDocs:
+    description: "Find out more"
+    url: "https://coinhive.com/documentation/http-api#user-balance"
+- name: "link"
+  description: "Operations about link resource"
+  externalDocs:
+    description: "Find out more"
+    url: "https://coinhive.com/documentation/http-api#link-create"
+- name: "stats"
+  description: "Operations about stats resource"
+  externalDocs:
+    description: "Find out more"
+    url: "https://coinhive.com/documentation/http-api#stats-payout"
+schemes:
+- "https"
+paths:
+  /token/verify:
+    post:
+      tags:
+      - "token"
+      summary: "Verify that a token from a CoinHive.Token miner has reached a number of hashes."
+      description: "Verify that a token from a CoinHive.Token miner has reached a number of hashes. Tokens are only valid for 1 hour. Note that a token can only be verified once. All subsequent requests to verify the same token will result in the invalid_token error."
+      operationId: "verifyToken"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: token
+        in: formData
+        description: "The name of the token you want to verify. This can be obtained directly from the miner, through miner.getToken(). For the captcha, the token name will be submitted together with the form as coinhive-captcha-token."
+        required: true
+        type: string
+      - name: hashes
+        in: formData
+        description: "The number of hashes this token must have reached in order to be valid."
+        required: true
+        type: string
+      responses:
+        200:
+          description: "Response"
+          schema:
+            $ref: "#/definitions/Token"
+      security:
+      - api_key: []
+  /user/balance:
+    get:
+      tags:
+      - "user"
+      summary: "Get the total number of hashes."
+      description: "Get the total number of hashes, the withdrawn hashes and the current balance for a user name. Think of it as the balance of a bank account. Hashes can be paid in through mining, and withdrawn through /user/withdraw."
+      operationId: "getUserBalance"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: name
+        in: query
+        description: "The user's name, analogous to the name specified for the CoinHive.User miner. This can be anything that is unique to the user on your website. E.g. a user name, id, the md5 hash of their name or their email address."
+        required: true
+        type: string
+      responses:
+        200:
+          description: "Response"
+          schema:
+            $ref: "#/definitions/UserBalance"
+      security:
+      - api_key: []
+  /user/withdraw:
+    post:
+      tags:
+      - "user"
+      summary: "Withdraw a number of hashes for a user name."
+      description: "Withdraw a number of hashes for a user name. If successful, the requested amount will be subtracted from the user's balance."
+      operationId: "withdrawUser"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: name
+        in: formData
+        description: "The user's name, analogous to the name specified for the CoinHive.User miner."
+        required: true
+        type: string
+      - name: amount
+        in: formData
+        description: "The amount of hashes to withdraw."
+        required: true
+        type: string
+      responses:
+        200:
+          description: "Response"
+          schema:
+            $ref: "#/definitions/Withdraw"
+      security:
+      - api_key: []
+  /user/top:
+    get:
+      tags:
+      - "user"
+      summary: "Get a list of top users ordered by total number of hashes."
+      description: "Get a list of top users ordered by total number of hashes, balance or hashes withdrawn."
+      operationId: "getTopUser"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: count 
+        in: query
+        description: "Optional. The number of users to return. Default 4096, min 32, max 8192."
+        required: true
+        type: string
+      - name: page
+        in: query
+        description: "Optional. The page of users to return, obtained from the previous request's nextPage property. Leave out or specify an empty string for the first page."
+        required: true
+        type: string
+      responses:
+        200:
+          description: "Response"
+          schema:
+            $ref: "#/definitions/TopUser"
+      security:
+      - api_key: []
+  /user/list:
+    get:
+      tags:
+      - "user"
+      summary: "Get a paginated list of all users in alphabetical order."
+      description: "Note that this will only return users with a total number of hashes greater than 0."
+      operationId: "getUserList"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: count 
+        in: query
+        description: "Optional. The number of users to return. Default 4096, min 32, max 8192."
+        required: true
+        type: string
+      - name: page
+        in: query
+        description: "Optional. The page of users to return, obtained from the previous request's nextPage property. Leave out or specify an empty string for the first page."
+        required: true
+        type: string
+      responses:
+        200:
+          description: "Response"
+          schema:
+            $ref: "#/definitions/TopUser"
+      security:
+      - api_key: []
+  /user/reset:
+    post:
+      tags:
+      - "user"
+      summary: "Reset a user's total hashes and withdrawn amount to 0."
+      description: "Reset a user's total hashes and withdrawn amount to 0."
+      operationId: "resetUser"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: name
+        in: formData
+        description: "The user's name whose total and withdrawn values will be reset to 0."
+        required: true
+        type: string
+      - name: amount
+        in: formData
+        description: "The amount of hashes to withdraw."
+        required: true
+        type: string
+      responses:
+        200:
+          description: "Response"
+          schema:
+            $ref: "#/definitions/Reset"
+      security:
+      - api_key: []
+  /user/reset-all:
+    post:
+      tags:
+      - "user"
+      summary: "Reset the hashes and withdrawn amount for all users for this site to 0."
+      description: "Reset the hashes and withdrawn amount for all users for this site to 0."
+      operationId: "resetAllUser"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "Response"
+          schema:
+            $ref: "#/definitions/ResetAll"
+      security:
+      - api_key: []
+  /link/create:
+    post:
+      tags:
+      - "link"
+      summary: "Create a new shortlink."
+      description: "Create a new shortlink. You can also do this by hand, directly from your dashboard."
+      operationId: "createLink"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters:
+      - name: url
+        in: formData
+        description: "The target URL for the shortlink. Max 255 chars."
+        required: true
+        type: string
+      - name: hashes
+        in: formData
+        description: "The number of hashes that have to be solved, before the user is redirected to the target URL."
+        required: true
+        type: string
+      responses:
+        200:
+          description: "Response"
+          schema:
+            $ref: "#/definitions/Link"
+      security:
+      - api_key: []
+  /stats/payout:
+    get:
+      tags:
+      - "stats"
+      summary: "Get the current payout rate and stats about the network."
+      description: "Get the current payout rate and stats about the network."
+      operationId: "getStatsPayout"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "Response"
+          schema:
+            $ref: "#/definitions/StatsPayout"
+      security:
+      - api_key: []
+  /stats/site:
+    get:
+      tags:
+      - "stats"
+      summary: "Get the current hashrate, total hashes, paid & pending xmr, and the hourly history for the past seven days for the site."
+      description: "Get the current hashrate, total hashes, paid & pending xmr, and the hourly history for the past seven days for the site."
+      operationId: "getStatsSite"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "Response"
+          schema:
+            $ref: "#/definitions/StatsSite"
+      security:
+      - api_key: []
+  /stats/history:
+    get:
+      tags:
+      - "stats"
+      summary: "Get the hourly history of total hashes and hashes/s for a time period for the site."
+      description: "Get the hourly history of total hashes and hashes/s for a time period for the site."
+      operationId: "getStatsHistory"
+      consumes:
+      - "application/x-www-form-urlencoded"
+      produces:
+      - "application/json"
+      parameters: 
+      - name: begin
+        in: query
+        description: "Unix timestamp of the begin of the period you want to retreive."
+        required: true
+        type: string
+      - name: end
+        in: query
+        description: "Unix timestamp of the end of the period you want to retreive."
+        required: true
+        type: string
+      responses:
+        200:
+          description: "Response"
+          schema:
+            $ref: "#/definitions/StatsHistory"
+      security:
+      - api_key: []
+securityDefinitions:
+  api_key:
+    type: "apiKey"
+    name: "secret"
+    in: "query"
+definitions:
+  Token:
+    type: "object"
+    required:
+    - "success"
+    properties:
+      success:
+        type: "boolean"
+        description: "whether the token could be verified"
+      hashes:
+        type: "number"
+        description: "the number of hashes recorded for this token"
+      created:
+        type: "number"
+        description: "unix timestamp"
+      error:
+        description: |
+          * missing_input : No token or hashes provided as POST parameters.
+          * bad_request : The token could not be verified. Either the token name was not found, or the token hasn't reached the requested number of hashes.
+          In addition, any of the global errors might occur.
+        allOf:
+          - type: "string"
+            enum:
+            - "missing_input"
+            - "invalid_token"
+          - $ref: "#/definitions/GlobalError"
+  UserBalance:
+    type: "object"
+    required:
+    - "success"
+    properties:
+      success:
+        type: "boolean"
+        description: "whether the user's balance could be obtained"
+      name:
+        type: "string"
+        description: "the user's name"
+      total:
+        type: "number"
+        description: "the number of accepted hashes"
+      withdrawn:
+        type: "number"
+        description: "the number of withdrawn hashes"
+      balance:
+        type: "number"
+        description: "the number of (accepted - withdrawn) hashes"
+      error:
+        description: |
+          * missing_input : No name provided as GET parameter.
+          * unknown_user : The user name is not known (has never connected to the pool).
+          In addition, any of the global errors might occur.
+        allOf:
+          - type: "string"
+            enum:
+            - "missing_input"
+            - "unknown_user"
+          - $ref: "#/definitions/GlobalError"
+  Withdraw:
+    type: "object"
+    required:
+    - "success"
+    properties:
+      success:
+        type: "boolean"
+        description: "whether the requested amount could be withdrawn"
+      name:
+        type: "string"
+        description: "the user's name"
+      amount:
+        type: "number"
+        description: "the number of hashes withdrawn (same as input)"
+      error:
+        description: | 
+          * missing_input : No name or amount provided as POST parameters.
+          * unknown_user : The user name is not known (has never connected to the pool).
+          * invalid_amount : The specified amount to withdraw is invalid (e.g. negative).
+          * insufficent_funds : The user doesn't have enough hashes to withdraw the specified amount.
+          In addition, any of the global errors might occur.
+        allOf:
+          - type: "string"
+            enum:
+            - "missing_input"
+            - "unknown_user"
+            - "invalid_amount"
+            - "insufficent_funds"
+          - $ref: "#/definitions/GlobalError"
+  TopUser:
+    type: "object"
+    required:
+    - "success"
+    properties:
+      success:
+        type: "boolean"
+        description: "whether the requested amount could be withdrawn"
+      users:
+        type: "object"
+        properties:
+          name:
+            type: string
+          total:
+            type: number
+          withdrawn:
+            type: number
+          balance:
+            type: number
+      nextPage:
+        type: "number"
+        description: "the name of the next page of users"
+      error:
+        description: | 
+          * invalid_page : The page of users could not be found.
+          In addition, any of the global errors might occur.
+        allOf:
+          - type: "string"
+            enum:
+            - "invalid_page"
+          - $ref: "#/definitions/GlobalError"
+  Reset:
+    type: "object"
+    required:
+    - "success"
+    properties:
+      success:
+        type: "boolean"
+        description: "whether the request succeeded; also true for non-existing users names"
+      error:
+        description: | 
+          * missing_input : No name provided as POST parameter.
+          In addition, any of the global errors might occur.
+        allOf:
+          - type: "string"
+            enum:
+            - "invalid_page"
+          - $ref: "#/definitions/GlobalError"
+  ResetAll:
+    type: "object"
+    required:
+    - "success"
+    properties:
+      success:
+        type: "boolean"
+        description: "whether the request succeeded; also true for non-existing users names"
+      affected:
+        type: "number"
+        description: "the number of users affected"
+      error:
+        description: | 
+          Any of the global errors might occur.
+        allOf:
+          - $ref: "#/definitions/GlobalError"
+  Link:
+    type: "object"
+    required:
+    - "success"
+    properties:
+      success:
+        type: "boolean"
+        description: "whether the request succeeded; also true for non-existing users names"
+      url:
+        type: "string"
+        description: "the resulting URL of the shortlink"
+      error:
+        description: | 
+          * missing_input : No url or hashes provided as POST parameters.
+          * invalid_url : The provided target URL is not a valid http:// or https:// URL.
+          In addition, any of the global errors might occur.
+        allOf:
+          - type: "string"
+            enum:
+            - "missing_input"
+            - "invalid_url"
+          - $ref: "#/definitions/GlobalError"
+  StatsPayout:
+    type: "object"
+    required:
+    - "success"
+    properties:
+      success:
+        type: "boolean"
+        description: "whether the request succeeded; also true for non-existing users names"
+      globalDifficulty:
+        type: "number"
+      globalHashrate:
+        type: "number"
+      blockReward:
+        type: "number"
+      payoutPercentage:
+        type: "number"
+      payoutPer1MHashes:
+        type: "number"
+      xmrToUsd:
+        type: "number"
+      updated:
+        type: "number"
+      error:
+        description: | 
+          Any of the global errors might occur.
+        allOf:
+          - $ref: "#/definitions/GlobalError"
+  StatsSite:
+    type: "object"
+    required:
+    - "success"
+    properties:
+      success:
+        type: "boolean"
+        description: "whether the request succeeded; also true for non-existing users names"
+      hashesPerSecond:
+        type: "number"
+      hashesTotal:
+        type: "number"
+      xmrPending:
+        type: "number"
+      xmrPaid:
+        type: "number"
+      name:
+        type: "number"
+      history:
+        type: "array"
+        items:
+          type: object
+          properties:
+            time:
+              type: number
+              description: unix timestamp
+            hashesTotal:
+              type: number
+            hashesPerSecond:
+              type: number
+      error:
+        description: | 
+          Any of the global errors might occur.
+        allOf:
+          - $ref: "#/definitions/GlobalError"
+  StatsHistory:
+    type: "object"
+    required:
+    - "success"
+    properties:
+      success:
+        type: "boolean"
+      history:
+        type: "array"
+        items:
+          type: object
+          properties:
+            time:
+              type: number
+              description: unix timestamp
+            hashesTotal:
+              type: number
+            hashesPerSecond:
+              type: number
+      error:
+        description: | 
+          Any of the global errors might occur.
+        allOf:
+          - $ref: "#/definitions/GlobalError"
+  GlobalError:
+    type: "string"
+    description: |
+      Each API request may result in any of these global errors
+      * invalid_secret : The secret provided as GET or POST parameter is invalid.
+      * bad_request : A malformed request was received.
+      * wrong_method : The API expected a POST request but a GET request was performed.
+      * not_found : The API endpoint could not be found. Check the URL for your API call.
+      * internal_error : Something bad happened on our side. Contact us if the issue persists.
+    enum: 
+    - "invalid_secret"
+    - "bad_request"
+    - "wrong_method"
+    - "not_found"
+    - "internal_error"
+externalDocs:
+  description: "Find out more about Coinhive HTTP API"
+  url: "https://coinhive.com/documentation/http-api#reference"
